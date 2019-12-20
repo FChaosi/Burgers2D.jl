@@ -22,7 +22,6 @@ function grid(a1,b1,a2,b2,nx,ny)
 
     K[i,j] = k[i]
     L[i,j] = l[j]
-
   end
 
 return (X,Y,K,L)
