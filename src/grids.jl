@@ -1,4 +1,11 @@
-function grid(a1,b1,a2,b2,nx,ny)
+struct Grid
+    X
+    Y
+    K
+    L
+end
+
+function grid(a1, b1, a2, b2, nx, ny)
 
   L1 = b1 - a1
   L2 = b2 - a2
@@ -9,8 +16,8 @@ function grid(a1,b1,a2,b2,nx,ny)
   x = range(a1, stop = b1 - dx, length = nx)
   y = range(a2, stop = b2 - dy, length = ny)
 
-  k = [0:nx/2; -(nx/2 - 1):-1]
-  l = [0:ny/2; -(ny/2 - 1):-1]
+  k = (2pi/L1)*[0:nx/2; -(nx/2 - 1):-1]
+  l = (2pi/L2)*[0:ny/2; -(ny/2 - 1):-1]
 
   X, Y = zeros(nx, ny), zeros(nx, ny)
 
@@ -24,6 +31,6 @@ function grid(a1,b1,a2,b2,nx,ny)
     L[i,j] = l[j]
   end
 
-return (X,Y,K,L)
+  return Grid(X, Y, K, L)
 
 end
