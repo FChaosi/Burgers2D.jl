@@ -17,7 +17,7 @@ function test_gridy()
 end
 
 #Test for x-, y-wavenumber spacing
-function test_wavex()
+function test_wavenumbers()
   Lx, Ly = 2*pi, 3.5*pi
   g = Burgers2D.grid(-Lx/2, Lx/2, -Ly/2, Ly/2, 100, 300)
 
@@ -27,32 +27,21 @@ function test_wavex()
 end
 
 #Test for spectral derivative function
-function testspec()
+function test_spectralderivative()
   g = Burgers2D.grid(-2pi, 2pi, -4pi, 4pi, 100, 300)
-
-  u = zeros(100, 300)
-  actual = zeros(100, 300)
-
-  for i in 1:100, j in 1:300
-      u[i,j] = sin(g.X[i,j])*cos(g.Y[i,j])
-      actual[i,j] = -sin(g.X[i,j])*cos(g.Y[i,j])
-  end
-
-  spec = Burgers2D.specd(u, g.K, 2)
-
-  err = maximum( abs.(actual - spec) )
-
-  return isapprox(err, 0, atol=1e-10)
+  u = @. sin(g.X)*cos(g.Y)
+  uxx_analytic = @. -sin(g.X)*cos(g.Y)
+  uxx_numerical = Burgers2D.specd(u, g.K, 2)
+  return isapprox(uxx_analytic, uxx_numerical, rtol=1e-12)
 end
 
+# begin tests
+@testset "Grid Tests" begin
+  @test test_gridx()
+  @test test_gridy()
+  @test test_wavenumbers()
+end
 
-
-
-
-
-
-
-@test test_gridx()
-@test test_gridy()
-@test test_wavex()
-@test testspec()
+@testset "Derivative Tests" begin
+  @test test_spectralderivative()
+end
