@@ -17,10 +17,6 @@ function specd(values, wave, n)
   return real(ifft(spectral))
 end
 
-function laplacian(u)
-    ...
-end
-
 
 #Calculate RHS
 function RHS(data::Data, wavex, wavey)
@@ -37,13 +33,11 @@ function RHS(data::Data, wavex, wavey)
     advectionu = (data.un).*unx + (data.vn).*uny
     advectionv = (data.un).*vnx + (data.vn).*vny
 
-    ut = laplun - advectionu
-    vt = laplvn - advectionv
+    ut = laplun - 0*advectionu
+    vt = laplvn - 0*advectionv
 
     return Data(ut, vt)
 end
-
-RHS(data::Data, grid::Grid) = RHS(data::Data, grid.K, grid.L)
 
 #Forward Euler Time Step
 function euler(data::Data, wavex, wavey, tstep)
@@ -56,7 +50,7 @@ function euler(data::Data, wavex, wavey, tstep)
 end
 
 #AB3 Method
-function AB3(triple::Triple, wavex, wavey, tstep)
+function AB3(triple :: Triple, wavex, wavey, tstep)
 
     data1 = triple.h
     data2 = triple.hn
@@ -75,10 +69,3 @@ function AB3(triple::Triple, wavex, wavey, tstep)
 
     return Triple(data1new, data2new, data3new)
 end
-
-# function RK3(data::Data, grid::Grid, tstep)
-#     k1 = RHS(data, grid)
-#     k2 = RHS(data.+tstep/2*k1, grid)
-#     k3 = tstep*RHS(data, grid)
-#     k1 = tstep*RHS(data, grid)
-# end
