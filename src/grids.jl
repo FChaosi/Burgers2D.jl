@@ -6,31 +6,17 @@ struct Grid
 end
 
 function grid(a1, b1, a2, b2, nx, ny)
+  Lx, Ly = b1-a1, b2-a2
+  dx, dy = Lx/nx, Ly/ny
 
-  L1 = b1 - a1
-  L2 = b2 - a2
+  x = reshape(Array(range(a1, stop = b1 - dx, length = nx)), (nx, 1))
+  y = reshape(Array(range(a2, stop = b2 - dy, length = ny)), (1, ny))
 
-  dx = L1/nx
-  dy = L2/ny
+  k = reshape(Array((2pi/Lx)*[0:nx/2; -(nx/2-1):-1]), (nx, 1))
+  l = reshape(Array((2pi/Ly)*[0:ny/2; -(ny/2-1):-1]), (1, ny))
 
-  x = range(a1, stop = b1 - dx, length = nx)
-  y = range(a2, stop = b2 - dy, length = ny)
-
-  k = (2pi/L1)*[0:nx/2; -(nx/2 - 1):-1]
-  l = (2pi/L2)*[0:ny/2; -(ny/2 - 1):-1]
-
-  X, Y = zeros(nx, ny), zeros(nx, ny)
-
-  K, L = zeros(nx, ny), zeros(nx, ny)
-
-  for i in 1:nx, j in 1:ny
-    X[i,j] = x[i]
-    Y[i,j] = y[j]
-
-    K[i,j] = k[i]
-    L[i,j] = l[j]
-  end
+  X, Y = x .+ 0*y, 0*x .+ y
+  K, L = k .+ 0*l, 0*k .+ l
 
   return Grid(X, Y, K, L)
-
 end
