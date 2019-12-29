@@ -21,13 +21,8 @@ function B2D(d::Domain, u0, v0, tstep, tfin)
 gr = Burgers2D.grid(d.a1, d.b1, d.a2, d.b2, d.nx, d.ny)
 
 #Initial Conditions f and g
-f = zeros(d.nx, d.ny)
-g = zeros(d.nx, d.ny)
-
-for i in 1:(d.nx), j in 1:(d.ny)
-    f[i, j] = u0(gr.X[i, j], gr.Y[i, j])
-    g[i, j] = v0(gr.X[i, j], gr.Y[i, j])
-end
+f = @. u0(gr.X, gr.Y)
+g = @. v0(gr.X, gr.Y)
 
 uvt0 = (f, g)
 
@@ -97,13 +92,8 @@ g = Burgers2D.grid(-2pi, 2pi, -4pi, 4pi, 128, 256)
 
 nt = round(tfin / tstep)
 
-usol_analytic = zeros(128, 256)
-vsol_analytic = zeros(128, 256)
-
-for i in 1:128, j in 1:256
-    usol_analytic[i, j] = u_analytic(g.X[i, j], g.Y[i, j], tfin)
-    vsol_analytic[i, j] = v_analytic(g.X[i, j], g.Y[i, j], tfin)
-end
+usol_analytic = @. u_analytic(g.X, g.Y)
+vsol_analytic = @. v_analytic(g.X, g.Y)
 
 uerror = maximum(abs.(usol_analytic - u_numerical))
 verror = maximum(abs.(vsol_analytic - v_numerical))
