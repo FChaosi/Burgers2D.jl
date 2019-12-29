@@ -6,7 +6,7 @@ function test_gridxdy()
   nx, ny = 100, 200
   g = Burgers2D.grid(-Lx/2, Lx/2, -Ly/2, Ly/2, nx, ny)
   dx, dy = Lx/nx, Ly/ny
-  
+
   return isapprox(g.X[3, 1] - g.X[2, 1], dx, rtol = 1e-12) & isapprox(g.Y[1, 3]-g.Y[1, 2], dy, rtol=1e-12)
 end
 
@@ -16,7 +16,7 @@ function test_wavenumbers()
   nx, ny = 100, 300
   g = Burgers2D.grid(-Lx/2, Lx/2, -Ly/2, Ly/2, nx, ny)
   dk, dl = 2*pi/Lx, 2*pi/Ly
-  
+
  return (isapprox(g.K[2,3] - g.K[1, 3], dk, rtol=1e-12) & isapprox(g.L[3,2] - g.L[3, 1], dl, rtol=1e-12) )
 end
 
