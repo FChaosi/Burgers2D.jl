@@ -28,7 +28,7 @@ function test_spectralderivative()
   x, y = g.X, g.Y
   k0, l0 = 2pi/Lx, 2pi/Ly
   
-  u = @. sin(2k0*x)*cos(y)
+  u = @. sin(2k0*x)*cos(l0*y)
   uxx_analytic  = @. -(2k0)^2*u
   uxx_numerical = Burgers2D.specd(u, g.K, 2)
   
