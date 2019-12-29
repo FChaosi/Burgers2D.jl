@@ -20,12 +20,22 @@ function advection((u, v), f, (kx, ky))
   advection = @. u*fx + v*fy
 end
 
+"""
+    laplacian(f, (kx, ky))
+
+Returns the Laplacian of field f: ∂²f/∂x² + ∂²f/∂y²
+"""
+function laplacian(f, (kx, ky))
+  laplacianf = specd(f, kx, 2) + specd(f, ky, 2)
+end
+
 #Calculate RHS
 function RHS((un, vn), wavex, wavey)
   #Calculate Laplacian of un and vn
-  laplun = specd(un, wavex, 2) + specd(un, wavey, 2)
-  laplvn = specd(vn, wavex, 2) + specd(vn, wavey, 2)
-
+  laplun = laplacian(un, (kx, ky))
+  laplvn = laplacian(vn, (kx, ky))
+  
+  #Calculate advection terms for un and vn
   advectionu = advection((un, vn), un, (wavex, wavey))
   advectionv = advection((un, vn), vn, (wavex, wavey))
   

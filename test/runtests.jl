@@ -41,6 +41,23 @@ function test_advection()
   x, y = g.X, g.Y
   k0, l0 = 2pi/Lx, 2pi/Ly
   
+  f = @. cos(4k0*x)*sin(3l0*y)
+  
+  fxx =  @. -(4*k0)^2*f
+  fyy =  @. -(3*l0)^2*f
+  
+  laplacian1 = @. fxx + fyy
+  laplacian2 = Burgers2D.laplacian(f, (g.K, g.L))
+  
+  isapprox(laplacian1, laplacian2, rtol=1e-12)
+end
+
+function test_advection()
+  Lx, Ly = 3pi, 2pi
+  g = Burgers2D.grid(-Lx/2, Lx/2, -Ly/2, Ly/2, 40, 60)
+  x, y = g.X, g.Y
+  k0, l0 = 2pi/Lx, 2pi/Ly
+  
   u = @. sin(2k0*x)*cos(l0*y)
   v = @. sin(3k0*x)^2*cos(3l0*y)
   f = @. cos(4k0*x)*sin(4l0*y)
@@ -51,7 +68,7 @@ function test_advection()
   advection1 = @. u*fx + v*fy
   advection2 = Burgers2D.advection((u, v), f, (g.K, g.L))
   
-  isapprox( advection1, advection2, rtol=1e-12)
+  isapprox(advection1, advection2, rtol=1e-12)
 end
   
 # begin tests
@@ -62,6 +79,7 @@ end
 
 @testset "Derivative Tests" begin
   @test test_spectralderivative()
+  @test test_laplacian()
 end
 
 @testset "Advection Test" begin
