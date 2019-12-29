@@ -1,7 +1,3 @@
-using FFTW
-
-
-
 #Spectral Method for Derivative
 function specd(values, wave, n)
 (nx, ny)  = size(wave)

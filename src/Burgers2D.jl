@@ -1,5 +1,7 @@
 module Burgers2D
 
+using FFTW
+
 include("grids.jl")
 
 include("RHS.jl")
