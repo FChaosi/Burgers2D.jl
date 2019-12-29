@@ -6,12 +6,12 @@ include("RHS.jl")
 
 #Structures
 struct Domain
-     a1
-     b1
-     a2
-     b2
-     nx
-     ny
+     a1 :: Float64
+     b1 :: Float64
+     a2 :: Float64
+     b2 :: Float64
+     nx :: Int64
+     ny :: Int64
  end
 
 #Burgers 2D Algorithm

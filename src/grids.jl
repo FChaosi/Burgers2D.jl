@@ -1,8 +1,8 @@
 struct Grid
-    X
-    Y
-    K
-    L
+    X :: Array{Float64, 2}
+    Y :: Array{Float64, 2}
+    K :: Array{Float64, 2}
+    L :: Array{Float64, 2}
 end
 
 function grid(a1, b1, a2, b2, nx, ny)
