@@ -35,6 +35,25 @@ function test_spectralderivative()
   return isapprox(uxx_analytic, uxx_numerical, rtol=1e-12)
 end
 
+function test_advection()
+  Lx, Ly = 3pi, 2pi
+  g = Burgers2D.grid(-Lx/2, Lx/2, -Ly/2, Ly/2, 40, 60)
+  x, y = g.X, g.Y
+  k0, l0 = 2pi/Lx, 2pi/Ly
+  
+  u = @. sin(2k0*x)*cos(l0*y)
+  v = @. sin(3k0*x)^2*cos(3l0*y)
+  f = @. cos(4k0*x)*sin(4l0*y)
+  
+  fx =  @. -4*k0*sin(4k0*x)*sin(4l0*y)
+  fy =  @.  4*l0*cos(4k0*x)*cos(4l0*y)
+  
+  advection1 = @. u*fx + v*fy
+  advection2 = Burgers2D.advection((u, v), f, (g.K, g.L))
+  
+  isapprox( advection1, advection2, rtol=1e-12)
+end
+  
 # begin tests
 @testset "Grid Tests" begin
   @test test_gridxdy()
@@ -44,3 +63,8 @@ end
 @testset "Derivative Tests" begin
   @test test_spectralderivative()
 end
+
+@testset "Advection Test" begin
+  @test test_advection()
+end
+

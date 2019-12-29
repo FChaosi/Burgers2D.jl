@@ -1,35 +1,41 @@
 #Spectral Method for Derivative
 function specd(values, wave, n)
-(nx, ny)  = size(wave)
-wavepower = (im * wave).^n
-index = Int(nx/2 + 1)
-realwave = wavepower[1:index, :]
+  (nx, ny)  = size(wave)
+  wavepower = (im * wave).^n
+  index = Int(nx/2 + 1)
+  realwave = wavepower[1:index, :]
   spectral = realwave .* rfft(values)
   return irfft(spectral, nx)
+end 
+
+"""
+    advection((u, v), f)
+
+Returns the advection of field f with flow (u, v):
+u*∂f/∂x + v*∂f/∂y
+"""
+function advection((u, v), f, (kx, ky))
+  fx = specd(f, kx, 1)
+  fy = specd(f, ky, 1)
+  advection = @. u*fx + v*fy
 end
 
 #Calculate RHS
 function RHS((un, vn), wavex, wavey)
-    #Calculate Laplacian of un and vn
-    laplun = specd(un, wavex, 2) + specd(un, wavey, 2)
-    laplvn = specd(vn, wavex, 2) + specd(vn, wavey, 2)
+  #Calculate Laplacian of un and vn
+  laplun = specd(un, wavex, 2) + specd(un, wavey, 2)
+  laplvn = specd(vn, wavex, 2) + specd(vn, wavey, 2)
 
-    unx = specd(un, wavex, 1)
-    uny = specd(un, wavey, 1)
+  advectionu = advection((un, vn), un, (wavex, wavey))
+  advectionv = advection((un, vn), vn, (wavex, wavey))
+  
+  forcingu = -(laplun - advectionu)
+  forcingv = -(laplvn - advectionv)
 
-    vnx = specd(vn, wavex, 1)
-    vny = specd(vn, wavey, 1)
+  ut = laplun - advectionu + forcingu
+  vt = laplvn - advectionv + forcingv
 
-    advectionu = (un).*unx + (vn).*uny
-    advectionv = (un).*vnx + (vn).*vny
-
-    forcingu = -(laplun - advectionu)
-    forcingv = -(laplvn - advectionv)
-
-    ut = laplun - advectionu + forcingu
-    vt = laplvn - advectionv + forcingv
-
-    return (ut, vt)
+  return (ut, vt)
 end
 
 #Forward Euler Time Step
