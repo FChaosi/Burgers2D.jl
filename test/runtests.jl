@@ -35,7 +35,7 @@ function test_spectralderivative()
   return isapprox(uxx_analytic, uxx_numerical, rtol=1e-12)
 end
 
-function test_advection()
+function test_laplacian()
   Lx, Ly = 3pi, 2pi
   g = Burgers2D.grid(-Lx/2, Lx/2, -Ly/2, Ly/2, 40, 60)
   x, y = g.X, g.Y
