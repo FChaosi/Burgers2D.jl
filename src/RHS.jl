@@ -3,60 +3,76 @@ using FFTW
 
 
 #Spectral Method for Derivative
-function specd(values, wave, n)
-(nx, ny)  = size(wave)
-wavepower = (im * wave).^n
-index = Int(nx/2 + 1)
-realwave = wavepower[1:index, :]
-  spectral = realwave .* rfft(values)
+function specd(specvalues, wave, n)
+  (lengthx, lengthy) = size(specvalues)
+  nx = 2*lengthx - 2
+  scaling = (im * wave).^n
+  spectral = scaling .* specvalues
   return irfft(spectral, nx)
 end
 
+#Laplacian
+function lapln(specvalues, wavex, wavey)
+valuesxx = specd(specvalues, wavex, 2)
+valuesyy = specd(specvalues, wavey, 2)
+  return valuesxx + valuesyy
+end
+
 #Calculate RHS
-function RHS((un, vn), wavex, wavey)
-    #Calculate Laplacian of un and vn
-    laplun = specd(un, wavex, 2) + specd(un, wavey, 2)
-    laplvn = specd(vn, wavex, 2) + specd(vn, wavey, 2)
+function RHS((unh, vnh), wavex, wavey)
 
-    unx = specd(un, wavex, 1)
-    uny = specd(un, wavey, 1)
+    #Laplacian
+    laplun = lapln(unh, wavex, wavey)
+    laplvn = lapln(vnh, wavex, wavey)
 
-    vnx = specd(vn, wavex, 1)
-    vny = specd(vn, wavey, 1)
+    #First Derivatives
+    unx = specd(unh, wavex, 1)
+    uny = specd(unh, wavey, 1)
 
+    vnx = specd(vnh, wavex, 1)
+    vny = specd(vnh, wavey, 1)
+
+    #Conversion to physical space
+    (lengthx, lengthy) = size(unh)
+    nx = 2*lengthx - 2
+
+    un = irfft(unh, nx)
+    vn = irfft(vnh, nx)
+
+    #Advection
     advectionu = (un).*unx + (vn).*uny
     advectionv = (un).*vnx + (vn).*vny
 
-    forcingu = -(laplun - advectionu)
-    forcingv = -(laplvn - advectionv)
+    ut = laplun - (0 .* advectionu)
+    vt = laplvn - (0 .* advectionv)
 
-    ut = laplun - advectionu + forcingu
-    vt = laplvn - advectionv + forcingv
+    ut_h = rfft(ut)
+    vt_h = rfft(vt)
 
-    return (ut, vt)
+    return (ut_h, vt_h)
 end
 
-#Forward Euler Time Step
-function euler((un, vn), wavex, wavey, tstep)
-    (ut, vt) = RHS((un, vn), wavex, wavey)
+#Forward Euler Time Step in Fourier Space
+function euler((unh, vnh), wavex, wavey, tstep)
+    (ut_h, vt_h) = RHS((unh, vnh), wavex, wavey)
 
-    (unn, vnn) = (un, vn) .+ (tstep .* (ut, vt))
+    (unn_h, vnn_h) = (unh, vnh) .+ (tstep .* (ut_h, vt_h))
 
-    return (unn, vnn)
+    return (unn_h, vnn_h)
 end
 
-#AB3 Method
-function AB3((un, vn), (unn, vnn), (unnn, vnnn), wavex, wavey, tstep)
+#AB3 Method in Fourier Space
+function AB3((unh, vnh), (unn_h, vnn_h), (unnn_h, vnnn_h), wavex, wavey, tstep)
 
-    inc1 = RHS((un, vn), wavex, wavey)
-    inc2 = RHS((unn, vnn), wavex, wavey)
-    inc3 = RHS((unnn, vnnn), wavex, wavey)
+    inc1 = RHS((unh, vnh), wavex, wavey)
+    inc2 = RHS((unn_h, vnn_h), wavex, wavey)
+    inc3 = RHS((unnn_h, vnnn_h), wavex, wavey)
 
-    increment= (tstep/12) .* (23. .* inc1 .+ (-16) .* inc2 .+ 5 .* inc3)
+    increment = (tstep/12) .* (23. .* inc1 .+ (-16) .* inc2 .+ 5 .* inc3)
 
-    (un, vn) = (unn, vnn)
-    (unn, vnn) = (unnn, vnnn)
-    (unnn, vnnn) = (unn, vnn) .+ increment
+    (unh, vnh) = (unn_h, vnn_h)
+    (unn_h, vnn_h) = (unnn_h, vnnn_h)
+    (unnn_h, vnnn_h) = (unn_h, vnn_h) .+ increment
 
-    return ((un, vn), (unn, vnn), (unnn, vnnn))
+    return ((unh, vnh), (unn_h, vnn_h), (unnn_h, vnnn_h))
 end

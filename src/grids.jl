@@ -18,5 +18,9 @@ function grid(a1, b1, a2, b2, nx, ny)
   X, Y = x .+ 0*y, 0*x .+ y
   K, L = k .+ 0*l, 0*k .+ l
 
-  return Grid(X, Y, K, L)
+  index = Int(nx/2 + 1)
+  Kreal = K[1:index, :]
+  Lreal = L[1:index, :]
+
+  return Grid(X, Y, Kreal, Lreal)
 end
