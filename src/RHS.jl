@@ -1,55 +1,49 @@
-using FFTW
-
-
-
 #Spectral Method for Derivative
-function specd(specvalues, wave, n)
-  (lengthx, lengthy) = size(specvalues)
-  nx = 2*lengthx - 2
-  scaling = (im * wave).^n
-  spectral = scaling .* specvalues
+function specd(values, wave, n)
+  (nx, ny)  = size(values)
+  wavepower = (im * wave).^n
+  spectral = wavepower .* rfft(values)
   return irfft(spectral, nx)
 end
 
-#Laplacian
-function lapln(specvalues, wavex, wavey)
-valuesxx = specd(specvalues, wavex, 2)
-valuesyy = specd(specvalues, wavey, 2)
-  return valuesxx + valuesyy
+"""
+    advection((u, v), f)
+
+Returns the advection of field f with flow (u, v):
+u*∂f/∂x + v*∂f/∂y
+"""
+function advection((u, v), f, (kx, ky))
+  fx = specd(f, kx, 1)
+  fy = specd(f, ky, 1)
+  advection = @. u*fx + v*fy
+end
+
+"""
+    laplacian(f, (kx, ky))
+
+Returns the Laplacian of field f: ∂²f/∂x² + ∂²f/∂y²
+"""
+function laplacian(f, (kx, ky))
+  laplacianf = specd(f, kx, 2) + specd(f, ky, 2)
 end
 
 #Calculate RHS
-function RHS((unh, vnh), wavex, wavey)
+function RHS((un, vn), wavex, wavey)
+  #Calculate Laplacian of un and vn
+  laplun = laplacian(un, (kx, ky))
+  laplvn = laplacian(vn, (kx, ky))
 
-    #Laplacian
-    laplun = lapln(unh, wavex, wavey)
-    laplvn = lapln(vnh, wavex, wavey)
+  #Calculate advection terms for un and vn
+  advectionu = advection((un, vn), un, (wavex, wavey))
+  advectionv = advection((un, vn), vn, (wavex, wavey))
 
-    #First Derivatives
-    unx = specd(unh, wavex, 1)
-    uny = specd(unh, wavey, 1)
+  forcingu = -(laplun - advectionu)
+  forcingv = -(laplvn - advectionv)
 
-    vnx = specd(vnh, wavex, 1)
-    vny = specd(vnh, wavey, 1)
+  ut = laplun - advectionu + forcingu
+  vt = laplvn - advectionv + forcingv
 
-    #Conversion to physical space
-    (lengthx, lengthy) = size(unh)
-    nx = 2*lengthx - 2
-
-    un = irfft(unh, nx)
-    vn = irfft(vnh, nx)
-
-    #Advection
-    advectionu = (un).*unx + (vn).*uny
-    advectionv = (un).*vnx + (vn).*vny
-
-    ut = laplun - (0 .* advectionu)
-    vt = laplvn - (0 .* advectionv)
-
-    ut_h = rfft(ut)
-    vt_h = rfft(vt)
-
-    return (ut_h, vt_h)
+  return (ut, vt)
 end
 
 #Forward Euler Time Step in Fourier Space
