@@ -6,6 +6,8 @@ include("grids.jl")
 
 include("RHS.jl")
 
+include("AB3.jl")
+
 #Structures
 struct Domain
      a1 :: Float64
@@ -20,38 +22,28 @@ struct Domain
 function B2D(d::Domain, u0, v0, tstep, tfin)
 
 #Grid
-gr = Burgers2D.grid(d.a1, d.b1, d.a2, d.b2, d.nx, d.ny)
+gr = Grid(d.a1, d.b1, d.a2, d.b2, d.nx, d.ny)
 
 #Initial Conditions f and g
 f = @. u0(gr.X, gr.Y)
 g = @. v0(gr.X, gr.Y)
 
-#Convert f and g to Fourier space
-fh = rfft(f)
-gh = rfft(g)
-
-uvh_t0 = (fh, gh)
+uv_t0 = (f, g1)
 
 #Further Initial Conditions
-uvh_t1 = euler(uvh_t0, gr.K, gr.L, tstep)
-uvh_t2 = euler(uvh_t1, gr.K, gr.L, tstep)
+uv_t1 = Burgers2D.euler(uv_t0, gr.K, gr.L, tstep)
+uv_t2 = Burgers2D.euler(uv_t1, gr.K, gr.L, tstep)
 
 #Iteration
 nt = round(tfin / tstep)
 
-AB3data = (uvh_t0, uvh_t1, uvh_t2)
+AB3data = (uv_t0, uv_t1, uv_t2)
 
 for i in 1:(nt - 2)
     AB3data = AB3(AB3data[1], AB3data[2], AB3data[3], gr.K, gr.L, tstep)
 end
 
-(uh, vh) = AB3data[3]
-
-(lengthx, lengthy) = size(uh)
-nx = 2*lengthx - 2
-
-u = irfft(uh, nx)
-v = irfft(vh, nx)
+(u, v) = AB3data[3]
 
 return (u, v)
 end

@@ -5,7 +5,7 @@ struct Grid
     L :: Array{Float64, 2}
 end
 
-function grid(a1, b1, a2, b2, nx, ny)
+function Grid(a1, b1, a2, b2, nx, ny)
   Lx, Ly = b1 - a1, b2 - a2
   dx, dy = Lx/nx, Ly/ny
 

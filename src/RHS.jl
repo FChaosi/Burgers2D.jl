@@ -1,9 +1,9 @@
 #Spectral Method for Derivative
-function specd(values, wave, n)
-  (nx, ny)  = size(values)
+function specd(phys_values, wave, n)
+  (nx, ny)  = size(phys_values)
   wavepower = (im * wave).^n
-  spectral = wavepower .* rfft(values)
-  return irfft(spectral, nx)
+  spectral_deriv = wavepower .* rfft(phys_values)
+  return irfft(spectral_deriv, nx)
 end
 
 """
@@ -12,61 +12,53 @@ end
 Returns the advection of field f with flow (u, v):
 u*∂f/∂x + v*∂f/∂y
 """
-function advection((u, v), f, (kx, ky))
-  fx = specd(f, kx, 1)
-  fy = specd(f, ky, 1)
+function advection((u, v), f, wave_x, wave_y)
+
+  fx = specd(f, wave_x, 1)
+  fy = specd(f, wave_y, 1)
   advection = @. u*fx + v*fy
 end
 
-"""
+"""`    `
     laplacian(f, (kx, ky))
 
 Returns the Laplacian of field f: ∂²f/∂x² + ∂²f/∂y²
 """
-function laplacian(f, (kx, ky))
-  laplacianf = specd(f, kx, 2) + specd(f, ky, 2)
+function laplacian(f, wave_x, wave_y)
+ return specd(f, wave_x, 2) + specd(f, wave_y, 2)
 end
 
 #Calculate RHS
-function RHS((un, vn), wavex, wavey)
+function RHS((un, vn), wave_x, wave_y)
   #Calculate Laplacian of un and vn
-  laplun = laplacian(un, (kx, ky))
-  laplvn = laplacian(vn, (kx, ky))
+  laplun = laplacian(un, wave_x, wave_y)
+  laplvn = laplacian(vn, wave_x, wave_y)
 
   #Calculate advection terms for un and vn
-  advectionu = advection((un, vn), un, (wavex, wavey))
-  advectionv = advection((un, vn), vn, (wavex, wavey))
+  advectionu = advection((un, vn), un, wave_x, wave_y)
+  advectionv = advection((un, vn), vn, wave_x, wave_y)
 
-  forcingu = -(laplun - advectionu)
-  forcingv = -(laplvn - advectionv)
+  un_t = laplun - (0*advectionu)
+  vn_t = laplvn - (0*advectionv)
 
-  ut = laplun - advectionu + forcingu
-  vt = laplvn - advectionv + forcingv
-
-  return (ut, vt)
+  return (un_t, vn_t)
 end
 
-#Forward Euler Time Step in Fourier Space
-function euler((unh, vnh), wavex, wavey, tstep)
-    (ut_h, vt_h) = RHS((unh, vnh), wavex, wavey)
+#Forward Euler Time Step
+function euler((un, vn), wave_x, wave_y, tstep)
+    (un_t, vn_t) = RHS((un, vn), wave_x, wave_y)
 
-    (unn_h, vnn_h) = (unh, vnh) .+ (tstep .* (ut_h, vt_h))
-
-    return (unn_h, vnn_h)
+    return (un, vn) .+ ( tstep .* (un_t, vn_t) )
 end
 
-#AB3 Method in Fourier Space
-function AB3((unh, vnh), (unn_h, vnn_h), (unnn_h, vnnn_h), wavex, wavey, tstep)
+#AB3 Method
+function AB3((un, vn), (unn, vnn), (unnn, vnnn), wave_x, wave_y, tstep)
 
-    inc1 = RHS((unh, vnh), wavex, wavey)
-    inc2 = RHS((unn_h, vnn_h), wavex, wavey)
-    inc3 = RHS((unnn_h, vnnn_h), wavex, wavey)
+    inc1 = 23 .*  RHS((unnn, vnnn), wave_x, wave_y)
+    inc2 = -16 .* RHS((unn, vnn), wave_x, wave_y)
+    inc3 = 5 .* RHS((un, vn), wave_x, wave_y)
 
-    increment = (tstep/12) .* (23. .* inc1 .+ (-16) .* inc2 .+ 5 .* inc3)
+    increment = (tstep/12) .* (inc1 .+ inc2 .+ inc3)
 
-    (unh, vnh) = (unn_h, vnn_h)
-    (unn_h, vnn_h) = (unnn_h, vnnn_h)
-    (unnn_h, vnnn_h) = (unn_h, vnn_h) .+ increment
-
-    return ((unh, vnh), (unn_h, vnn_h), (unnn_h, vnnn_h))
+    return ((unn, vnn), (unnn, vnnn), (unnn, vnnn) .+ increment )
 end

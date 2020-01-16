@@ -46,10 +46,10 @@ function test_laplacian()
   fxx =  @. -(4*k0)^2*f
   fyy =  @. -(3*l0)^2*f
 
-  laplacian1 = @. fxx + fyy
-  laplacian2 = Burgers2D.laplacian(f, (g.K, g.L))
+  laplacian_analytic = @. fxx + fyy
+  laplacian_numeric = Burgers2D.laplacian(f, (g.K, g.L))
 
-  isapprox(laplacian1, laplacian2, rtol=1e-12)
+  isapprox(laplacian_analytic, laplacian_numeric, rtol=1e-12)
 end
 
 function test_advection()
@@ -65,11 +65,44 @@ function test_advection()
   fx =  @. -4*k0*sin(4k0*x)*sin(4l0*y)
   fy =  @.  4*l0*cos(4k0*x)*cos(4l0*y)
 
-  advection1 = @. u*fx + v*fy
-  advection2 = Burgers2D.advection((u, v), f, (g.K, g.L))
+  advection_analytic = @. u*fx + v*fy
+  advection_numeric = Burgers2D.advection((u, v), f, (g.K, g.L))
 
-  isapprox(advection1, advection2, rtol=1e-12)
+  isapprox(advection_analytic, advection_numeric, rtol=1e-12)
 end
+
+function test_diffusion()
+Lx, Ly = 2pi, 4pi
+g = Burgers2D.grid(-Lx/2, Lx/2, -Ly/2, Ly/2, 16, 16)
+d = Burgers2D.Domain(-Lx/2, Lx/2, -Ly/2, Ly/2, 16, 16)
+
+x, y = g.X, g.Y
+
+#Diffusion coefficients - k[1] is the diffusion cofficient for u, k[2] is for v.
+k = [1 1]
+
+u_analytic(x, y, t) = sin(x)*sin(y)*exp(-2t)
+v_analytic(x, y, t) = cos(x)*cos(y)*exp(-2t)
+
+u0(x, y) = u_analytic(x, y, 0)
+v0(x, y) = v_analytic(x, y, 0)
+
+tstep = 1e-6
+tfin = 1e-5
+
+(u_numeric, v_numeric) = Burgers2D.B2D(d, u0, v0, tstep, tfin)
+
+u_analytic_val = u_analytic.(g.X, g.Y, tfin)
+v_analytic_val = v_analytic.(g.X, g.Y, tfin)
+
+
+u_error = maximum( abs.(u_numeric - u_analytic_val))
+v_error = maximum( abs.(v_numeric - v_analytic_val))
+end
+
+
+
+
 
 # begin tests
 @testset "Grid Tests" begin
