@@ -71,7 +71,7 @@ function test_advection()
   isapprox(advection_analytic, advection_numeric, rtol=1e-12)
 end
 
-function test_diffusion()
+function test_diffusion_AB3()
 tstep_arr = [1e-4 1e-5]
 tfin = 1e-3
 
@@ -95,7 +95,7 @@ v_analytic_val = v_analytic.(g.X, g.Y, tfin)
 
 for i in 1:2
 
-    (u_numeric, v_numeric) = Burgers2D.B2D(d, u0, v0, tstep_arr[i], tfin)
+    (u_numeric, v_numeric) = Burgers2D.B2D(d, u0, v0, tstep_arr[i], tfin, "AB3")
 
     u_err_arr[i] = maximum( abs.(u_numeric - u_analytic_val))
     v_err_arr[i] = maximum( abs.(v_numeric - v_analytic_val))
@@ -125,5 +125,5 @@ end
 end
 
 @testset "Diffusion Test" begin
-  @test test_diffusion()
+  @test test_diffusion_AB3()
 end

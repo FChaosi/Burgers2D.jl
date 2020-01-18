@@ -62,3 +62,15 @@ function AB3((un, vn), (unn, vnn), (unnn, vnnn), wave_x, wave_y, tstep)
 
     return ((unn, vnn), (unnn, vnnn), (unnn, vnnn) .+ increment )
 end
+
+function RK4((un,vn), wave_x, wave_y, tstep)
+
+    k1 = tstep .* RHS((un,vn), wave_x, wave_y)
+    k2 = (2 * tstep) .* RHS((un,vn) .+ (0.5 .* k1), wave_x, wave_y)
+    k3 = (2 * tstep) .* RHS((un,vn) .+ (0.5 .* k2), wave_x, wave_y)
+    k4 = tstep .* RHS((un,vn) .+ k3, wave_x, wave_y)
+
+    increment = 1/6 .* (k1 .+ k2 .+ k3 .+ k4)
+    (unn,vnn) = (un,vn) .+ increment
+    return (unn, vnn)
+end
