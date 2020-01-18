@@ -72,40 +72,40 @@ function test_advection()
 end
 
 function test_diffusion_AB3()
-tstep_arr = [1e-4 1e-5]
-tfin = 1e-3
+  tstep_arr = [1e-4 1e-5]
+  tfin = 1e-3
 
-u_err_arr = zeros(2)
-v_err_arr = zeros(2)
+  u_err_arr = zeros(2)
+  v_err_arr = zeros(2)
 
-Lx, Ly = 2pi, 4pi
-g = Burgers2D.Grid(-Lx/2, Lx/2, -Ly/2, Ly/2, 64, 128)
-d = Burgers2D.Domain(-Lx/2, Lx/2, -Ly/2, Ly/2, 64, 128)
+  Lx, Ly = 2pi, 4pi
+  g = Burgers2D.Grid(-Lx/2, Lx/2, -Ly/2, Ly/2, 64, 128)
+  d = Burgers2D.Domain(-Lx/2, Lx/2, -Ly/2, Ly/2, 64, 128)
 
-x, y = g.X, g.Y
+  x, y = g.X, g.Y
 
-u_analytic(x, y, t) = sin(x)*sin(y)*exp(-2t)
-v_analytic(x, y, t) = cos(x)*cos(y)*exp(-2t)
+  u_analytic(x, y, t) = sin(x)*sin(y)*exp(-2t)
+  v_analytic(x, y, t) = cos(x)*cos(y)*exp(-2t)
 
-u0(x, y) = u_analytic(x, y, 0)
-v0(x, y) = v_analytic(x, y, 0)
+  u0(x, y) = u_analytic(x, y, 0)
+  v0(x, y) = v_analytic(x, y, 0)
 
-u_analytic_val = u_analytic.(g.X, g.Y, tfin)
-v_analytic_val = v_analytic.(g.X, g.Y, tfin)
+  u_analytic_val = u_analytic.(g.X, g.Y, tfin)
+  v_analytic_val = v_analytic.(g.X, g.Y, tfin)
 
-for i in 1:2
+  for i in 1:2
 
-    (u_numeric, v_numeric) = Burgers2D.B2D(d, u0, v0, tstep_arr[i], tfin, "AB3")
+      (u_numeric, v_numeric) = Burgers2D.B2D(d, u0, v0, tstep_arr[i], tfin, "AB3")
 
-    u_err_arr[i] = maximum( abs.(u_numeric - u_analytic_val))
-    v_err_arr[i] = maximum( abs.(v_numeric - v_analytic_val))
-end
+      u_err_arr[i] = maximum( abs.(u_numeric - u_analytic_val))
+      v_err_arr[i] = maximum( abs.(v_numeric - v_analytic_val))
+  end
 
-#Test for quadratic scaling of the error
-u_err_scale = u_err_arr[1]/u_err_arr[2]
-v_err_scale = v_err_arr[1]/v_err_arr[2]
+  #Test for quadratic scaling of the error
+  u_err_scale = u_err_arr[1]/u_err_arr[2]
+  v_err_scale = v_err_arr[1]/v_err_arr[2]
 
-isapprox(u_err_scale, 100, rtol=22) & isapprox(v_err_scale, 100, rtol=22)
+  isapprox(u_err_scale, 100, rtol=22) & isapprox(v_err_scale, 100, rtol=22)
 end
 
 
