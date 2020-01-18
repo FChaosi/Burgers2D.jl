@@ -1,6 +1,9 @@
 name = "Burgers2D"
 uuid = "a9521552-03c6-4607-b84d-f7a70d04f472"
-authors = ["fabiancircelli "]
+keywords = ["julia", "PDE", "Burgers equation", "spectral methods"]
+authors = ["Fabian Circelli and Navid C. Constantinou <navidcy@gmail.com>"]
+description = "Tools for solving the 2D Burgers equation on a doubly-periodic two-dimensional domain."
+repository = "https://github.com/FChaosi/Burgers2D.jl"
 version = "0.1.0"
 
 [deps]
