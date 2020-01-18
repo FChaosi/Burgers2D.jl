@@ -1,62 +1,63 @@
 module Burgers2D
 
+using FFTW
+
 include("grids.jl")
 
 include("RHS.jl")
 
+include("AB3.jl")
 
 #Structures
 struct Domain
-     a1
-     a2
-     b1
-     b2
-     nx
-     ny
+     a1 :: Float64
+     b1 :: Float64
+     a2 :: Float64
+     b2 :: Float64
+     nx :: Int64
+     ny :: Int64
  end
-
- struct Inputs
-     d :: Domain
-     f0 :: Function
-     g0 :: Function
-     tstep
-     tfin
- end
-
 
 #Burgers 2D Algorithm
-function B2D(input :: Inputs)
+function B2D(d::Domain, u0, v0, tstep, tfin, method::String)
 
 #Grid
-g = Burgers2D.grid(input.d.a1, input.d.a2, input.d.b1, input.d.b2, input.d.nx, input.d.ny)
+gr = Grid(d.a1, d.b1, d.a2, d.b2, d.nx, d.ny)
 
 #Initial Conditions f and g
-n1 = input.d.nx
-n2 = input.d.ny
+f = @. u0(gr.X, gr.Y)
+g = @. v0(gr.X, gr.Y)
 
-ft0 = zeros(n1, n2)
-gt0 = zeros(n1, n2)
+uv_t0 = (f, g)
 
-for i in 1:n1, j in 1:n2
-    ft0[i,j] = input.f0(g.X[i,j], g.Y[i,j])
-    gt0[i,j] = input.g0(g.X[i,j], g.Y[i,j])
-end
+nt = round(tfin / tstep)
 
-uvt0 = Data(ft0, gt0)
-
+if method=="AB3"
 #Further Initial Conditions
-uvt1 = euler(uvt0, g.K, g.L, input.tstep)
-uvt2 = euler(uvt1, g.K, g.L, input.tstep)
+uv_t1 = Burgers2D.euler(uv_t0, gr.K, gr.L, tstep)
+uv_t2 = Burgers2D.euler(uv_t1, gr.K, gr.L, tstep)
 
 #Iteration
-nt = round( (input.tfin) / (input.tstep) )
-update = Triple(uvt0, uvt1, uvt2)
+AB3data = (uv_t0, uv_t1, uv_t2)
 
-for i in 1:(nt-2)
-    update = AB3(update, g.K, g.L, input.tstep)
+for i in 1:(nt - 2)
+    AB3data = AB3(AB3data[1], AB3data[2], AB3data[3], gr.K, gr.L, tstep)
 end
 
-return update.hnn
+(u, v) = AB3data[3]
+
+elseif method=="RK4"
+
+RK4data = uv_t0
+
+for i in 1:nt
+    RK4data = RK4(RK4data, gr.K, gr.L, tstep)
+end
+
+(u_fin, v_fin) = RK4data
+
+end
+
 end
 
 
