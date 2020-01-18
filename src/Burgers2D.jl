@@ -28,7 +28,7 @@ gr = Grid(d.a1, d.b1, d.a2, d.b2, d.nx, d.ny)
 f = @. u0(gr.X, gr.Y)
 g = @. v0(gr.X, gr.Y)
 
-uv_t0 = (f, g1)
+uv_t0 = (f, g)
 
 #Further Initial Conditions
 uv_t1 = Burgers2D.euler(uv_t0, gr.K, gr.L, tstep)
