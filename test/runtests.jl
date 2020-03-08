@@ -108,6 +108,62 @@ function test_diffusion_AB3()
   isapprox(u_err_scale, 100, rtol=22) & isapprox(v_err_scale, 100, rtol=22)
 end
 
+#New test
+
+cx = 0.01
+sx = 0.1
+
+cy = 0.3
+sy = 0.2
+
+function anx(x, t)
+    st = 2*t + sx^2
+    return cx * sx/sqrt(st) * exp(-x^2/(2*st))
+end
+
+function any(y, t)
+    st = 2*t + sy^2
+    return cy * sy/sqrt(st) * exp(-y^2/(2*st))
+end
+
+function test_diffusion_AB3_gauss()
+
+dom = Burgers2D.Domain(-pi, pi, -2pi, 2pi, 16, 64)
+
+gr = Burgers2D.Grid(dom.a1, dom.b1, dom.a2, dom.b2, dom.nx, dom.ny)
+
+tstep1 = 1e-5
+tstep2 = 1e-4
+tfin = 1e-2
+
+gaussx(x) = cx * exp(-x^2/(2*cx^2))
+
+gaussy(y) = cy * exp(-y^2/(2*cy^2))
+
+gauss(x, y) = gaussx(x) * gaussy(y)
+
+gaussv = gauss.(gr.X, gr.Y)
+
+an(x, y, t) = anx(x, t) * any(y, t)
+
+num_val1 = Burgers2D.B2D(dom, gauss, gauss, tstep1, tfin, "AB3")[1]
+
+num_val2 = Burgers2D.B2D(dom, gauss, gauss, tstep2, tfin, "AB3")[1]
+
+an_val = an.(gr.X, gr.Y, tfin)
+
+diff1 = maximum(abs.(num_val1 - an_val))
+
+diff2 = maximum(abs.(num_val2 - an_val))
+
+println("Error with tstep=1e-5 is:")
+println(diff1)
+
+println("Error with tstep=1e-4 is:")
+println(diff2)
+
+isapprox(diff2/diff1, 100, rtol=22) 
+end
 
 # begin tests
 @testset "Grid Tests" begin
@@ -126,4 +182,5 @@ end
 
 @testset "Diffusion Test" begin
   @test test_diffusion_AB3()
+  @test test_diffusion_AB3_gauss()
 end
