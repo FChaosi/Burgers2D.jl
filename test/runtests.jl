@@ -71,17 +71,19 @@ function test_advection()
   isapprox(advection_analytic, advection_numeric, rtol=1e-12)
 end
 
-function test_diffusion_AB3()
+function test_diffusion_sin(timestepper, errorscale)
   tstep_arr = [1e-4 1e-5]
   tfin = 1e-3
-
+  
   u_err_arr = zeros(2)
   v_err_arr = zeros(2)
 
   Lx, Ly = 2pi, 4pi
   g = Burgers2D.Grid(-Lx/2, Lx/2, -Ly/2, Ly/2, 64, 128)
   d = Burgers2D.Domain(-Lx/2, Lx/2, -Ly/2, Ly/2, 64, 128)
-
+  
+  nu = 1.0
+  
   x, y = g.X, g.Y
 
   u_analytic(x, y, t) = sin(x)*sin(y)*exp(-2t)
@@ -94,75 +96,71 @@ function test_diffusion_AB3()
   v_analytic_val = v_analytic.(g.X, g.Y, tfin)
 
   for i in 1:2
+    (u_numeric, v_numeric) = Burgers2D.B2D(d, u0, v0, tstep_arr[i], tfin, timestepper, nu)
 
-      (u_numeric, v_numeric) = Burgers2D.B2D(d, u0, v0, tstep_arr[i], tfin, "AB3")
-
-      u_err_arr[i] = maximum( abs.(u_numeric - u_analytic_val))
-      v_err_arr[i] = maximum( abs.(v_numeric - v_analytic_val))
+    u_err_arr[i] = maximum( abs.(u_numeric - u_analytic_val) )
+    v_err_arr[i] = maximum( abs.(v_numeric - v_analytic_val) )
   end
 
   #Test for quadratic scaling of the error
   u_err_scale = u_err_arr[1]/u_err_arr[2]
   v_err_scale = v_err_arr[1]/v_err_arr[2]
 
-  isapprox(u_err_scale, 100, rtol=22) & isapprox(v_err_scale, 100, rtol=22)
+  isapprox(u_err_scale, errorscale, rtol=1e-1) & isapprox(v_err_scale, errorscale, rtol=1e-1)
 end
 
 #New test
+function test_diffusion_gauss(timestepper, errorscale)
+  d = Burgers2D.Domain(-pi, pi, -3.0, 3.0, 128, 130)
+  g = Burgers2D.Grid(d)
+  nu = 0.01
 
-cx = 0.01
-sx = 0.1
+  tstep_arr = [1e-2 1e-3]
+  tfin = 2e-1
+  u_err_arr = zeros(2)
+  v_err_arr = zeros(2)
+  
+  gaussian(x, σ, ampl) = ampl*exp(-x^2/(2*σ^2))  
+  
+  function analytic_solution(x, σ, ampl, t, nu)
+    σt = sqrt(2*nu*t + σ^2)
+    return gaussian(x, σt, ampl*σ/σt) 
+  end
+  
+  σx_u, σy_u, ampl_u = 0.20, 0.19, 0.01
+  σx_v, σy_v, ampl_v = 0.21, 0.22, 0.008
+  
+  u_analytic(x, y, t) = ampl_u*analytic_solution(x, σx_u, 1, t, nu)*analytic_solution(y, σy_u, 1, t, nu)
+  v_analytic(x, y, t) = ampl_v*analytic_solution(x, σx_v, 1, t, nu)*analytic_solution(y, σy_v, 1, t, nu)
 
-cy = 0.3
-sy = 0.2
+  u0(x, y) = u_analytic(x, y, 0)
+  v0(x, y) = v_analytic(x, y, 0)
 
-function anx(x, t)
-    st = 2*t + sx^2
-    return cx * sx/sqrt(st) * exp(-x^2/(2*st))
-end
+  u_analytic_val = u_analytic.(g.X, g.Y, tfin)
+  v_analytic_val = v_analytic.(g.X, g.Y, tfin)
 
-function any(y, t)
-    st = 2*t + sy^2
-    return cy * sy/sqrt(st) * exp(-y^2/(2*st))
-end
+  for i in 1:2
+    (u_numeric, v_numeric) = Burgers2D.B2D(d, u0, v0, tstep_arr[i], tfin, timestepper, nu)
 
-function test_diffusion_AB3_gauss()
+    u_err_arr[i] = maximum( abs.(u_numeric - u_analytic_val) )
+    v_err_arr[i] = maximum( abs.(v_numeric - v_analytic_val) )
+  end
 
-dom = Burgers2D.Domain(-pi, pi, -2pi, 2pi, 16, 64)
+  #Test for quadratic scaling of the error
+  u_err_scale = u_err_arr[1]/u_err_arr[2]
+  v_err_scale = v_err_arr[1]/v_err_arr[2]
 
-gr = Burgers2D.Grid(dom.a1, dom.b1, dom.a2, dom.b2, dom.nx, dom.ny)
+  println("Gaussian")
+  println(u_err_scale)
+  println(v_err_scale)
 
-tstep1 = 1e-5
-tstep2 = 1e-4
-tfin = 1e-2
+  println("Error with tstep=1e-5 is:")
+  println(u_err_arr[1])
 
-gaussx(x) = cx * exp(-x^2/(2*cx^2))
+  println("Error with tstep=1e-4 is:")
+  println(u_err_arr[2])
 
-gaussy(y) = cy * exp(-y^2/(2*cy^2))
-
-gauss(x, y) = gaussx(x) * gaussy(y)
-
-gaussv = gauss.(gr.X, gr.Y)
-
-an(x, y, t) = anx(x, t) * any(y, t)
-
-num_val1 = Burgers2D.B2D(dom, gauss, gauss, tstep1, tfin, "AB3")[1]
-
-num_val2 = Burgers2D.B2D(dom, gauss, gauss, tstep2, tfin, "AB3")[1]
-
-an_val = an.(gr.X, gr.Y, tfin)
-
-diff1 = maximum(abs.(num_val1 - an_val))
-
-diff2 = maximum(abs.(num_val2 - an_val))
-
-println("Error with tstep=1e-5 is:")
-println(diff1)
-
-println("Error with tstep=1e-4 is:")
-println(diff2)
-
-isapprox(diff2/diff1, 100, rtol=22) 
+  isapprox(u_err_scale, errorscale, rtol=1e-1) & isapprox(v_err_scale, errorscale, rtol=1e-1)
 end
 
 # begin tests
@@ -181,6 +179,9 @@ end
 end
 
 @testset "Diffusion Test" begin
-  @test test_diffusion_AB3()
-  @test test_diffusion_AB3_gauss()
+  @test test_diffusion_sin("ForwardEuler", 10)
+  @test test_diffusion_sin("AB3", 100)
+  @test test_diffusion_gauss("ForwardEuler", 10)
+  @test test_diffusion_gauss("AB3", 100)
+  @test test_diffusion_gauss("RK4", 10000)
 end
